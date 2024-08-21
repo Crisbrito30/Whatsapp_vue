@@ -9,7 +9,7 @@
             <div class="barra-superior" style="display: flex; justify-content: space-between; align-items: center; padding: 15px;">
               <span style="font-weight: bold; font-size: 20px;">Chats</span>
               <span class="adicionar" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu">
-                <i class="bi bi-person-plus-fill"></i>
+                <i class="bi bi-plus-circle-fill"></i>
               </span>
             </div>
             
@@ -100,7 +100,7 @@ export default {
     const emojiPicker = document.getElementById('emoji-picker');
 
     // Ao clicar no botão de emoji
-    emojiButton.addEventListener('click', () => {
+      emojiButton.addEventListener('click', () => {
       emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
     });
 
@@ -197,6 +197,7 @@ export default {
 
 .bi {
   font-size: 24px;
+  
 }
 </style>
 
