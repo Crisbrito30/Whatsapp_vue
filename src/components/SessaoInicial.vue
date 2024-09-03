@@ -43,7 +43,7 @@
 
                                 <div class="_aj-9"></div>
                                 <ol class="_aj-b">
-                                    <li class="_aj-c">Abra o WhatsApp no seu celular.</li>
+                                    <li class="_aj-c">Abra o <strong>WhatsApp</strong> no seu celular.</li>
                                     <li class="_aj-c">Toque em <strong>Mais opções <span class="x1rg5ohu x16dsc37"><svg
                                                     height="24px" viewBox="0 0 24 24" width="24px">
                                                     <rect fill="#f2f2f2" height="24" rx="3" width="24"></rect>
@@ -118,7 +118,7 @@ import axios from 'axios'; // Importa axios para fazer requisições HTTP
 import QrCodeModal from '@/components/QrCodeModal.vue';///importação do do qrcode 
 
 const sessionStatus = ref(''); // Armazena a mensagem de status da sessão
-const sessionSuccess = ref(false); // Armazena o estado de sucesso da sessão
+const sessionSuccess = ref(true); // Armazena o estado de sucesso da sessão
 const qrCodeUrl = ref(''); // Inicializa como string vazia para armazenar a URL do QR Code
 
 // Criando uma instância do Axios com a URL base
