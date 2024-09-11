@@ -4,110 +4,22 @@
 
       <div class="container">
         <div class="row   ">
-          <div class="d-flex align-items-center ">
+          <div class="d-flex align-items-center start-0">
             <i class="bi bi-whatsapp p-2 m-2"></i>
-            <p class="zap-cris text-white ">ZAP DO CRIS</p>
+            <p class="zap-cris text-white  Fs-2">ZAP DO CRIS</p>
+            
           </div>
         </div>
-        <div class="button is-primary is-light " @click="toggleSessao">
-          {{ sessaoInicial ? 'fechar Sessão Inicial' : 'abri Sessão inical' }} <i
-            class="bi bi-arrow-right-square-fill"></i>
-        </div>
 
+        <!-- Tela de sessão  inical -->
         <div v-if="sessaoInicial">
           <!-- Componente SessaoInicial -->
           <SessaoInicial />
         </div>
-
-        <div v-else class="columns">
-          <div class="column is-1 lista-de-ferramentas ">
-            <span class="adicionar vstack gap-5 col-md-5 mx-auto" type="button">
-              <i class="bi bi-chat-left-dots" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
-                data-bs-title="This top tooltip is themed via CSS variables."></i>
-              <i class="bi bi-bar-chart" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
-                data-bs-title="Aqui fica os gráficos de analise."></i>
-              <i class="bi bi-box-fill" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
-                data-bs-title="Aqui fica gerênciamneto de de status"></i>
-              <i class="bi bi-gear" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
-                data-bs-title="Aqui fica as configuração do sistemas"></i>
-              
-            </span>
-
-          </div>
-          <!-- Coluna Esquerda: Lista de Conversas -->
-          <div class="column is-4 lista-de-conversas">
-            <div class="barra-superior"
-              style="display: flex; justify-content: space-between; align-items: center; padding: 15px;">
-              <span style="font-weight: bold; font-size: 20px;">Chats</span>
-              <span class="adicionar" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu">
-                <div>
-                  <i class="bi bi-plus-circle-fill" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
-                  data-bs-title="Aqui  vc pode adicionar usuário e grupos"></i>  
-                </div>
-              </span>
-            </div>
-            <!-- Offcanvas Adicionar Chat -->
-            <MenuLateral />
-            <ItemDaListaDeConversa v-for="(conversa, indice) in conversas" :key="indice"
-              :mensagemAtiva="indice === indiceAtivo" :nomeDoUsuario="conversa.usuario" :fotoUsuario="conversa.foto"
-              :ultimaMensagem="conversa.mensagens[0].conteudo" v-on:click="indiceAtivo = indice" />
-          </div>
-
-          <!-- Coluna Direita: Conversa Ativa -->
-          <div class="column is-8 conversa-ativa">
-            <div class="barra-superior">
-              <img :src="conversas[indiceAtivo].foto" alt="foto do usuário" class="foto-usuario">
-              <div class="infomracoes-usuario">
-                <span>{{ conversas[indiceAtivo].usuario }}</span>
-                <small class="bio">{{ conversas[indiceAtivo].bio }}</small>
-              </div>
-            </div>
-            <div class="lista-mensagens">
-              <mensagem-da-conversa-ativa v-for="(mensagem, indice_) in conversas[indiceAtivo].mensagens" :key="indice_"
-                :conteudo="mensagem.conteudo" :horario="mensagem.horario" :verde="mensagem.verde" />
-            </div>
-            <!-- Barra de envio de mensagem -->
-            <div class="barra-inferior">
-              <!-- Botão de emoji -->
-              <span class="icon" ref="emojiButton">
-                <i class="bi bi-emoji-grin"></i>
-              </span>
-
-              <!-- Picker de emojis -->
-              <div ref="emojiPicker" style="display: none;">
-                <!-- Conteúdo do emoji picker aqui -->
-              </div>
-
-              <!-- Botão de anexo -->
-              <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-paperclip"></i>
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <label class="dropdown-item">
-                    <i class="bi bi-fast-forward-circle"></i> Video
-                    <input type="file" accept="video/*" @change="enviarArquivo($event, 'video')" hidden />
-                  </label>
-                </li>
-                <li>
-                  <label class="dropdown-item">
-                    <i class="bi bi-card-image"></i> Foto
-                    <input type="file" accept="image/*" @change="enviarArquivo($event, 'foto')" hidden />
-                  </label>
-                </li>
-                <li>
-                  <label class="dropdown-item">
-                    <i class="bi bi-file-earmark-spreadsheet"></i> Arquivo
-                    <input type="file" @change="enviarArquivo($event, 'arquivo')" hidden />
-                  </label>
-                </li>
-              </ul>
-
-              <!-- Campo de texto para enviar mensagem -->
-              <input type="text" class="input" v-on:keyup.enter="enviarMensagem" placeholder="Insira sua mensagem"
-                v-model="conteudoASerEnviado">
-            </div>
-          </div>
+        <!--Tela secundáira -->
+        <div v-else class="SessaoSecundaria">
+          <SessaoSecundaria  />
+        
         </div>
       </div>
     </section>
@@ -118,129 +30,53 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import conversasIniciais from './dado.js';
-import ItemDaListaDeConversa from './components/ItemDaListaDeConversa.vue';
-import MensagemDaConversaAtiva from './components/MensagemDaConversaAtiva.vue';
-import MenuLateral from './components/MenuLateral.vue';
+import { ref, onMounted, onBeforeUnmount  } from 'vue';
 import SessaoInicial from './components/SessaoInicial.vue';
+import { io } from 'socket.io-client'; // Importa o socket.io-client
+import SessaoSecundaria from './components/SessaoSecundaria.vue';
+
 
 // Estado
-const conversas = ref(conversasIniciais);
-const indiceAtivo = ref(0);
-const conteudoASerEnviado = ref('');
-const sessaoInicial = ref(false);
-const emojiButton = ref(null);
-const emojiPicker = ref(null);
+// const SessaoSecundaria= ref(null);
+// const conversas = ref(conversasIniciais);
+// const indiceAtivo = ref(0);
+// const conteudoASerEnviado = ref('');
+const sessaoInicial = ref(true);
+// const emojiButton = ref(null);
+// const emojiPicker = ref(null);
+const contactStatuses = ref([]); // Adiciona a lista de status dos contatos
+let socket; // Declara a variável socket
 
-import * as bootstrap from 'bootstrap'; // Importação explícita
 
 
 onMounted(() => {
-  // Inicialização dos tooltips
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  tooltipTriggerList.forEach(tooltipTriggerEl => {
-    new bootstrap.Tooltip(tooltipTriggerEl);
+  // Inicializa o socket conectando ao servidor
+  socket = io('http://localhost:3000'); // Altere a URL se necessário
+
+  // Ouve o evento 'contacts-status' e atualiza a lista de status
+  socket.on('contacts-status', (statuses) => {
+    console.log('Status dos contatos recebidos:', statuses);
+    contactStatuses.value = statuses;
   });
 
-  // Manipulação do botão e do picker de emojis
-  if (emojiButton.value && emojiPicker.value) {
-    emojiButton.value.addEventListener('click', () => {
-      emojiPicker.value.style.display =
-        emojiPicker.value.style.display === 'none' ? 'block' : 'none';
-    });
+  //  conexão QR code estabelecida 
+  socket.on('qr-code-connected', () => {
+    sessaoInicial.value = false; // Abre automaticamente a sessão após a conexão
+    console.log('Sessão inicial alterada para:', sessaoInicial.value);
 
-    emojiPicker.value.addEventListener('emoji-click', event => {
-      const emoji = event.detail.unicode;
-      conteudoASerEnviado.value += emoji;
-      emojiPicker.value.style.display = 'none'; // Fecha o seletor após escolher o emoji
-    });
-  } else {
-    console.error('Elemento não encontrado');
+  });
+
+  
+});
+
+// Limpeza ao desmontar o componente
+onBeforeUnmount(() => {
+  if (socket) {
+    socket.disconnect();
   }
 });
 
-// Método para alterar o estado da sessão inicial
-const toggleSessao = () => {
-  sessaoInicial.value = !sessaoInicial.value;
-};
 
-// Função para enviar mensagem
-const enviarMensagem = () => {
-  const horarioAtual = `${new Date().getHours()}:${new Date().getMinutes()}`;
-  const novaMensagem = {
-    horario: horarioAtual,
-    conteudo: conteudoASerEnviado.value,
-    verde: true,
-  };
-
-  // Adiciona a mensagem localmente
-  conversas.value[indiceAtivo.value].mensagens.push(novaMensagem);
-
-  // Substitua 'projetozap1' pela sua variável `apiKey` ou valor diretamente
-  const apiKey = 'projetozap1';
-
-  // Envia a mensagem para o backend com os parâmetros necessários
-  fetch(`http://localhost:3000/client/sendMessage/${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': 'projetozap', // Inclui o cabeçalho da API Key
-    },
-    body: JSON.stringify({
-      chatId: '5515998566622@c.us',
-      contentType: 'string',
-      content: conteudoASerEnviado.value,
-    }),
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Mensagem enviada com sucesso:', data);
-    })
-    .catch(error => {
-      console.error('Erro ao enviar mensagem:', error);
-    });
-
-  // Limpa o campo de mensagem após o envio
-  conteudoASerEnviado.value = '';
-};
-
-// Função para enviar mídia (foto, vídeo, arquivo)
-const enviarArquivo = async (event) => {
-  const file = event.target.files[0];
-  const contactId = '5515998566622@c.us';
-  if (file) {
-    await uploadFile(file, contactId);
-  }
-};
-
-const uploadFile = async (file, contactId) => {
-  const url = 'http://localhost:3000/contact/getProfilePicUrl/projetozap1';
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('contactId', contactId);
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'x-api-key': 'projetozap',
-        // 'Content-Type' não é necessário aqui; o navegador define automaticamente como 'multipart/form-data'
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Erro na rede');
-    }
-
-    const data = await response.json();
-    console.log('Upload bem-sucedido', data);
-  } catch (error) {
-    console.error('Erro no upload', error);
-  }
-};
 </script>
 
 
@@ -250,18 +86,45 @@ const uploadFile = async (file, contactId) => {
   color: white;
   font-size: 35px;
 }
+
+.columns2 {
+  border-radius: 22px;
+
+}
+
 .custom-tooltip {
-      --bs-tooltip-bg: #5bdd95 !important;/* Exemplo de cor personalizada */
-      --bs-tooltip-color: #464444 !important; /* Exemplo de cor do texto */
-    }
+  --bs-tooltip-bg: #5bdd95 !important;
+  /* Exemplo de cor personalizada */
+  --bs-tooltip-color: #464444 !important;
+  /* Exemplo de cor do texto */
+}
+
+.icon-container {
+  position: relative;
+  display: inline-block;
+  width: 1.5em;
+  /* Ajuste o valor conforme o tamanho desejado */
+  height: 1.5em;
+}
+
+.custom-icon {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  transition: opacity 0.3s ease;
+  font-size: 1.5rem;
+}
+
+.hidden {
+  opacity: 0;
+}
+
 
 .bi-fast-forward-circle,
 .bi-card-image,
-.bi-file-earmark-spreadsheet, 
-.bi-plus-circle-fill {
-  margin: 15px;
-  margin-left: 10px;
+.bi-file-earmark-spreadsheet {
   font-size: 22px;
+  padding: auto;
 }
 
 /* Resto do estilo existente */

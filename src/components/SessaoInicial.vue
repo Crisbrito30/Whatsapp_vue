@@ -6,7 +6,6 @@
                 <div class="container">
                     <div class="row">
                         <div class="col- d-flex align-items-center justify-content-between ">
-                            <button class="button is-primary p-3" @click="iniciarSessao">Iniciar Sessão</button>
                             <div
                                 class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 xeuugli x2lwn1j xozqiw3 x1oa3qoh x12fk4p8 x1k70j0n">
                                 <span data-icon="wa-desktop" class=""><svg viewBox="0 0 76 68" height="55"
@@ -32,10 +31,11 @@
 
                             <!-- Mensagem de Status da Sessão -->
                             <div v-if="sessionStatus"
-                                :class="{ 'has-text-success': sessionSuccess, 'has-text-danger': !sessionSuccess }">
+                                :class="{ 'has-text-success': sessionSuccess,
+                                 'has-text-danger': !sessionSuccess }">
                                 {{ sessionStatus }}
                             </div>
-                            <button class="button is-danger" @click="closeSession">Encerrar Sessão</button>
+                            <!-- <button class="button is-danger" @click="closeSession">Encerrar Sessão</button> -->
                         </div>
                         <div class="col-6 ">
                             <div class="_aj-7">
@@ -69,20 +69,37 @@
                         <!-- Exibe o QR Code se disponível -->
                         <div class="col-6">
                             <div class="qr-code-container">
-                                <i class="bi bi-qr-code-scan qr-icon"></i>
-                                <button @click="gerarQrCode" class="btn qr-code-button" data-bs-toggle="modal"
-                                    data-bs-target="#gerarQrCode">
-                                    <i class="bi bi-arrow-clockwise"></i> Obter QR Code
-                                </button>
-                            </div>
+                                <h4>Status da Sessão: </h4>
+                                <div v-if="!qrCodeGenerated" class="d-flex justify-content-center my-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
 
-                            <div v-if="qrCodeUrl">
-                                <p>Escaneie o QR Code para autenticação:</p>
-                                <img :src="qrCodeUrl" alt="QR Code" />
+                                <div v-if="qrCodeGenerated">
+                                    <h2>QR Code Gerado:</h2>
+                                    <img :src="qrCodeImage" alt="QR Code" />
+                                </div>
+                                <div v-else>
+                                    <p>QR Code não gerado ainda.</p>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="column is-2 status">
+                <!-- Exibe os status dos contatos quando a sessão está pronta -->
+                        <h2>Status dos Contatos</h2>
 
-
+                        <div v-if="contactStatuses.length > 0">
+                        <ul>
+                            <li v-for="(status, index) in contactStatuses" :key="index">
+                            {{ status.name }} - {{ status.status }}
+                            </li>
+                        </ul>
+                        </div>
+                        <div v-else>
+                        <p>Não há status de contatos disponíveis.</p>
+                        </div>
                     </div>
                     <div class="_ak5k">
                         <div class="landing-title _ak5l">Tutorial</div>
@@ -108,95 +125,138 @@
 
         </div>
 
-        <QrCodeModal />
     </div>
 
 </template>
 <script setup>
-import { ref } from 'vue';
-import axios from 'axios'; // Importa axios para fazer requisições HTTP
-import QrCodeModal from '@/components/QrCodeModal.vue';///importação do do qrcode 
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { io } from 'socket.io-client';
 
 const sessionStatus = ref(''); // Armazena a mensagem de status da sessão
-const sessionSuccess = ref(true); // Armazena o estado de sucesso da sessão
-const qrCodeUrl = ref(''); // Inicializa como string vazia para armazenar a URL do QR Code
+const sessionSuccess = ref(true); // Indica se a sessão foi bem-sucedida
 
-// Criando uma instância do Axios com a URL base
-const api = axios.create({
-    baseURL: 'http://localhost:3000',
-    headers: {
-        'Content-Type': 'application/json',
+const qrCodeImage = ref(null); // URL base64 do QR Code
+const qrCodeGenerated = ref(false); // Flag para indicar se o QR Code foi gerado
+const socket = ref(null);
+const contactStatuses = ref([]); // Lista de status dos contatos
+// Função para armazenar token de autenticação no localStorage
+function storeAuthToken(token) {
+  localStorage.setItem('authToken', token);
+}
+
+// Função para recuperar token de autenticação do localStorage
+function getAuthToken() {
+  return localStorage.getItem('authToken');
+}
+
+// Inicializa o socket.io e configura os eventos necessários
+onMounted(() => {
+    const token = getAuthToken(); // Recupera o token de autenticação do localStorage
+    if (token) {
+        console.log('Token encontrado:', token);
+
+        // Envia o token para o servidor se necessário
+        // socket.value.emit('authenticate', token);
     }
+    
+    socket.value = io('http://localhost:3000', {
+        query: { token } // Passa o token como uma query string, se necessário
+    });
+
+    socket.value.on('qr', (qr) => {
+        qrCodeImage.value = qr; // Recebe a URL base64 do QR Code
+        qrCodeGenerated.value = true;
+    });
+
+    socket.value.on('ready', (data) => {
+        console.log('Cliente pronto:', data);
+        // Armazena o token quando o cliente estiver pronto
+        const token = data.token; // Supondo que o token seja recebido aqui
+        if (token) {
+            storeAuthToken(token);
+        }
+    });
+
+    socket.value.on('message', (msg) => {
+        console.log('Mensagem recebida:', msg);
+        // Faça o que for necessário com a mensagem recebida
+    });
+
+    socket.value.on('qrCode', (data) => {
+        console.log('QR Code recebido do servidor:', data);
+    });
+
+    // Exibe os status dos contatos quando recebidos
+    socket.value.on('contacts-status', (statuses) => {
+        console.log('Status dos contatos:', statuses);
+        contactStatuses.value = statuses; // Armazena os status dos contatos
+    });
 });
 
-
-// Função para iniciar uma sessão
-function iniciarSessao() {
-    const apiKey = 'projetozap';
-    const instance = 'projetozap1';
-
-    // Fazendo a requisição ao backend para iniciar a sessão
-    api.get(`/session/start/${instance}`, {
-        headers: {
-            'x-api-key': apiKey,
-            'accept': 'application/json'
-        }
-    })
-
-        .then(response => {
-            if (response.data.success) {
-                console.log('Sessão iniciada com sucesso:', response.data.message);
-                sessionStatus.value = 'Sessão iniciada com sucesso.';
-                sessionSuccess.value = true;
-
-
-            } else {
-                console.log('Erro ao iniciar a sessão:', response.data.message);
-                sessionStatus.value = 'Erro ao iniciar a sessão.';
-                sessionSuccess.value = false;
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao conectar com o servidor:', error);
-            sessionStatus.value = 'Erro ao conectar com o servidor.';
-            sessionSuccess.value = false;
-        });
-}
-// Função para gerar o QR code
-
-// Função para encerrar a sessão usando o endpoint correto
-const closeSession = async () => {
-    try {
-        const response = await fetch('http://localhost:3000/session/terminateAll', {
-            method: 'GET',
-            headers: {
-                'accept': 'application/json',
-                'x-api-key': 'projetozap',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Erro ao encerrar a sessão');
-        }
-
-        const result = await response.json(); // Ler a resposta como JSON, se necessário
-        console.log('Sessão encerrada com sucesso:', result);
-        qrCodeUrl.value = null; // Opcional: Limpar o QR code ao encerrar a sessão
-    } catch (error) {
-        console.error('Erro ao encerrar a sessão:', error);
+onBeforeUnmount(() => {
+    if (socket.value) {
+        socket.value.disconnect(); // Desconecta o socket ao desmontar o componente
     }
-};
+});
 </script>
+
+
+<style scoped>
+/* Adicione seu CSS personalizado aqui */
+</style>
+
 
 <style scoped>
 /*stylo de seção inicial */
-.sessão-inicial{
-    border-radius: 11px;
-
+.qr-code-container {
+    display: flex;
+    flex-direction: column;
+    /* Organiza o conteúdo verticalmente */
+    align-items: center;
+    /* Centraliza o conteúdo horizontalmente */
+    padding: 20px;
+    /* Adiciona preenchimento ao contêiner */
+    border-radius: 10px;
+    /* Adiciona bordas arredondadas ao contêiner */
 }
+
+canvas {
+    margin-bottom: 10px;
+    /* Adiciona uma margem inferior ao QR Code */
+    border: 1px solid #ddd;
+    /* Adiciona uma borda ao QR Code */
+    width: 500px;
+    /* Ajusta a largura do QR Code */
+    height: 250px;
+    /* Ajusta a altura do QR Code */
+}
+
+.generate-btn {
+    display: inline-flex;
+    align-items: center;
+    /* Alinha o texto e o ícone verticalmente */
+    margin-top: 10px;
+    /* Adiciona uma margem superior ao botão */
+    padding: 10px 20px;
+    /* Ajusta o preenchimento do botão */
+    font-size: 16px;
+    /* Aumenta o tamanho da fonte do botão */
+    color: #007bff;
+    /* Define a cor do texto do botão */
+    cursor: pointer;
+    /* Adiciona um cursor pointer ao botão */
+    text-decoration: none;
+    /* Remove o sublinhado do link */
+}
+
+.generate-btn i {
+    margin-left: 5px;
+    /* Adiciona uma margem esquerda ao ícone */
+}
+
 .qr-code-container {
     position: relative;
-    
+
 }
 
 .qr-icon {
@@ -282,7 +342,8 @@ const closeSession = async () => {
 }
 
 .Sessão-incial {
-    border-radius: 9px;
+    display: flex;
+    border-radius: 8px;
     min-height: 900px;
     height: 900px;
     background-color: #fff;
