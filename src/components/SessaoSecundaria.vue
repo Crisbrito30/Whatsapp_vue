@@ -114,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref,onMounted } from 'vue';
 import ItemDaListaDeConversa from './ItemDaListaDeConversa.vue';
 import MensagemDaConversaAtiva from './MensagemDaConversaAtiva.vue';
 import MenuLateral from './MenuLateral.vue';
@@ -128,11 +128,16 @@ const conversas = ref(conversasIniciais);
 const indiceAtivo = ref(0);
 const emojiButton =ref(null);
 const emojiPicker = ref (null);
+
+
 // Inicialização dos tooltips
-const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+onMounted(() => {
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
   tooltipTriggerList.forEach(tooltipTriggerEl => {
     new bootstrap.Tooltip(tooltipTriggerEl);
   });
+});
+
 
   // Manipulação do botão e do picker de emojis
   if (emojiButton.value && emojiPicker.value) {
@@ -171,6 +176,8 @@ const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]
 
 .icon-container {
   position: relative;
+
+  
   display: inline-block;
   width: 1.5em;
   /* Ajuste o valor conforme o tamanho desejado */

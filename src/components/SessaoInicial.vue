@@ -69,25 +69,24 @@
                         <!-- Exibe o QR Code se disponível -->
                         <div class="col-6">
                             <div class="qr-code-container">
-                                <h4>Status da Sessão: </h4>
+                                <h4>Status da Sessão:</h4>
+
+                                <!-- Exibe o spinner enquanto o QR Code não foi gerado -->
                                 <div v-if="!qrCodeGenerated" class="d-flex justify-content-center my-4">
-                                    <div class="spinner-border text-success" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
+                                <div class="spinner-border text-success" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
                                 </div>
 
-                                <div v-if="qrCodeGenerated">
-                                    <h2>QR Code Gerado:</h2>
-                                    <img :src="qrCodeImage" alt="QR Code" />
-                                </div>
+                                <!-- Exibe o QR Code quando ele for gerado -->
                                 <div v-else>
-                                    <p>QR Code não gerado ainda.</p>
+                                <h2>QR Code Gerado:</h2>
+                                <img :src="qrCodeImage" alt="QR Code" />
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="column is-2 status">
-                <!-- Exibe os status dos contatos quando a sessão está pronta -->
+
+                    </div>                    <!-- <div class="column is-2 status">
                         <h2>Status dos Contatos</h2>
 
                         <div v-if="contactStatuses.length > 0">
@@ -100,7 +99,7 @@
                         <div v-else>
                         <p>Não há status de contatos disponíveis.</p>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="_ak5k">
                         <div class="landing-title _ak5l">Tutorial</div>
 
@@ -131,72 +130,59 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { io } from 'socket.io-client';
-
-const sessionStatus = ref(''); // Armazena a mensagem de status da sessão
-const sessionSuccess = ref(true); // Indica se a sessão foi bem-sucedida
+import Swal from 'sweetalert2';
 
 const qrCodeImage = ref(null); // URL base64 do QR Code
 const qrCodeGenerated = ref(false); // Flag para indicar se o QR Code foi gerado
 const socket = ref(null);
-const contactStatuses = ref([]); // Lista de status dos contatos
-// Função para armazenar token de autenticação no localStorage
-function storeAuthToken(token) {
-  localStorage.setItem('authToken', token);
-}
 
-// Função para recuperar token de autenticação do localStorage
-function getAuthToken() {
-  return localStorage.getItem('authToken');
-}
 
-// Inicializa o socket.io e configura os eventos necessários
 onMounted(() => {
-    const token = getAuthToken(); // Recupera o token de autenticação do localStorage
-    if (token) {
-        console.log('Token encontrado:', token);
+  socket.value = io('http://localhost:3000', {
+    transports: ['websocket'],
+  });
+ 
 
-        // Envia o token para o servidor se necessário
-        // socket.value.emit('authenticate', token);
-    }
-    
-    socket.value = io('http://localhost:3000', {
-        query: { token } // Passa o token como uma query string, se necessário
-    });
+  socket.value.on('connect', () => {
+    console.log('Socket conectado:', socket.value.connected); // Verifica se o socket está conectado
+  });
 
-    socket.value.on('qr', (qr) => {
-        qrCodeImage.value = qr; // Recebe a URL base64 do QR Code
-        qrCodeGenerated.value = true;
+  socket.value.on('qr', (qrCodeUrl) => {
+    qrCodeImage.value = qrCodeUrl;
+    qrCodeGenerated.value = true;
+    console.log('QR Code recebido do servidor:', qrCodeUrl);
+  });
+   //exibir as notificações de autenticação//
+   socket.value.on('authenticated', (message) => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Autenticado',
+      text: message,
+      confirmButtonColor:'#green',
+      timer: 3000
     });
+  });
 
-    socket.value.on('ready', (data) => {
-        console.log('Cliente pronto:', data);
-        // Armazena o token quando o cliente estiver pronto
-        const token = data.token; // Supondo que o token seja recebido aqui
-        if (token) {
-            storeAuthToken(token);
-        }
+  ///exibir as notificações de cleinte pronto //
+  socket.value.on('ready', (message) => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Cliente Pronto',
+      text: message,
+      timer: 3000
     });
+  });
 
-    socket.value.on('message', (msg) => {
-        console.log('Mensagem recebida:', msg);
-        // Faça o que for necessário com a mensagem recebida
-    });
+  socket.value.on('connect_error', (err) => {
+    console.error('Erro de conexão:', err);
+  });
 
-    socket.value.on('qrCode', (data) => {
-        console.log('QR Code recebido do servidor:', data);
-    });
-
-    // Exibe os status dos contatos quando recebidos
-    socket.value.on('contacts-status', (statuses) => {
-        console.log('Status dos contatos:', statuses);
-        contactStatuses.value = statuses; // Armazena os status dos contatos
-    });
 });
 
 onBeforeUnmount(() => {
-    if (socket.value) {
-        socket.value.disconnect(); // Desconecta o socket ao desmontar o componente
-    }
+  if (socket.value) {
+    socket.value.disconnect(); // Desconecta o socket ao desmontar o componente
+  }
 });
 </script>
 
